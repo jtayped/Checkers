@@ -1,5 +1,6 @@
 import pygame
 from ..settings import *
+from ..util import *
 
 class Piece:
     def __init__(self, screen, row, col, color) -> None:
@@ -18,10 +19,7 @@ class Piece:
         else:
             self.direction = -1
 
-        self.x, self.y = self.calculatePos(row, col)
-    
-    def calculatePos(self, row, col):
-        return sqSize*col + sqSize//2, sqSize*row + sqSize//2
+        self.x, self.y = calculatePos(row, col)
 
     def makeKing(self):
         self.king = True
@@ -34,9 +32,6 @@ class Piece:
         row, col = self.row, self.col
         # Get the destination row and column
         destRow, destCol = move
-        # Check if the move is within the bounds of the board
-        if destRow < 0 or destRow >= len(board) or destCol < 0 or destCol >= len(board[0]):
-            return False
         # Check if the square is occupied by the player's own piece
         if board[destRow][destCol] != 0 and board[destRow][destCol] != self.color:
             return False
@@ -48,7 +43,8 @@ class Piece:
         # Check if the move is a diagonal move that involves jumping over an opponent's piece
         rowDiff = abs(row - destRow)
         colDiff = abs(col - destCol)
-        if rowDiff == 2 and colDiff == 2:
+        if rowDiff == 2:
+            print("tud")
             jumpRow = (row + destRow) // 2
             jumpCol = (col + destCol) // 2
             if board[jumpRow][jumpCol] == opponent:
@@ -60,7 +56,7 @@ class Piece:
         # If none of the above conditions are met, the move is not valid
         return False
 
-    def getPossibleMoves(self, board):
+    def getValidMoves(self, board):
         possibleMoves = []
         for rowIndex,row in enumerate(board):
             for colIndex,col in enumerate(row):
@@ -68,7 +64,7 @@ class Piece:
                 if self.isValidMove(board, move):
                     possibleMoves.append(move)
         return possibleMoves
-    
+
     def draw(self):
         pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.radius)
         if self.king:
