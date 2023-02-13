@@ -121,9 +121,10 @@ class Board:
                     self.makeMove([self.selectedPiece.row, self.selectedPiece.col], [row, col], kill, self.playerTurn)
     
     def winnerManager(self):
+        winner = None
         if self.winner == player1Color:
             winner = 'player1'
-        else:
+        elif self.winner == player2Color:
             winner = 'player2'
 
         if winner != None:
