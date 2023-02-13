@@ -2,13 +2,18 @@ import pygame, sys
 from files.settings import *
 from .piece import Piece
 from ..util import *
+from .computer import Computer
 
 class Board:
-    def __init__(self, screen, clock, mode, font) -> None:
+    def __init__(self, screen, clock, mode, font, subtitleFont) -> None:
         self.screen = screen
         self.clock = clock
         self.mode = mode
         self.font = font
+        self.subtitleFont = subtitleFont
+
+        if self.mode == 'pvc':
+            self.computer = Computer()
 
         self.gameOver = False
 
@@ -104,12 +109,16 @@ class Board:
         self.validMoves = None
         self.winner = self.checkWin()
 
+        if self.mode == 'pvc' and self.playerTurn == player2Color:
+            computerMoveDetails = self.computer.getMove(self.board)
+            self.makeMove(computerMoveDetails[0], computerMoveDetails[1], computerMoveDetails[2], computerMoveDetails[3])
+
     def getSquare(self):
         mx, my = pygame.mouse.get_pos()
         row, col = my//sqSize, mx//sqSize
 
         selectedSquare = self.board[row][col]
-        if selectedSquare != 0:
+        if selectedSquare != 0 and selectedSquare.color == self.playerTurn:
             self.selectedPiece = selectedSquare
             if self.selectedPiece.color == self.playerTurn:
                 self.validMoves = self.selectedPiece.getValidMoves(self.board)
@@ -127,11 +136,20 @@ class Board:
         elif self.winner == player2Color:
             winner = 'player2'
 
-        if winner != None:
-            text = self.font.render(f"Winner: {winner}", True, (50, 50, 50))
-            textRect = text.get_rect()
+        if self.winner != None:
+            winner = self.font.render(f"Winner: {winner}", True, (50, 50, 50))
+            winnerRect = winner.get_rect()
 
-            self.screen.blit(text, (WIDTH//2-textRect.width//2, HEIGHT//2-textRect.height//2))
+            continueText = self.subtitleFont.render(f"Press C to continue", True, (50, 50, 50))
+            continueRect = continueText.get_rect()
+
+            x, y = WIDTH//2-winnerRect.width//2, HEIGHT//2-winnerRect.height//2
+            self.screen.blit(winner, (x, y))
+            self.screen.blit(continueText, (WIDTH//2-continueRect.width//2, y+continueRect.height*1.5))
+
+            key = pygame.key.get_pressed()
+            if key[pygame.K_c]:
+                self.gameOver = True
 
     def events(self):
         for event in pygame.event.get():
