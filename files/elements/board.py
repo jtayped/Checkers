@@ -13,6 +13,7 @@ class Board:
         self.board = []
         self.initBoard()
         print(self.board)
+        print(self.board[2][1].getPossibleMoves(self.board))
         self.selectedPiece = None
 
     def initBoard(self):
@@ -36,7 +37,7 @@ class Board:
     def drawSquares(self):
         for row in range(sqInWidth):
             for col in range(row % 2, sqInWidth, 2):
-                pygame.draw.rect(self.screen, 'blue', (row*sqSize, col*sqSize, sqSize, sqSize))
+                pygame.draw.rect(self.screen, BOARD_COLOR, (row*sqSize, col*sqSize, sqSize, sqSize))
 
     def drawPieces(self):
         for row in range(sqInWidth):
@@ -59,7 +60,7 @@ class Board:
 
     def update(self):
         self.events()
-        self.screen.fill('black')
+        self.screen.fill(BACKGROUND_COLOR)
 
         ######### Game Events #########
         
