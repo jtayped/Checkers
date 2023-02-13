@@ -4,10 +4,11 @@ from .piece import Piece
 from ..util import *
 
 class Board:
-    def __init__(self, screen, clock, mode) -> None:
+    def __init__(self, screen, clock, mode, font) -> None:
         self.screen = screen
         self.clock = clock
         self.mode = mode
+        self.font = font
 
         self.gameOver = False
 
@@ -18,6 +19,7 @@ class Board:
         self.validMoves = None
 
         self.playerTurn = player1Color
+        self.winner = None
 
     def initBoard(self):
         for row in range(sqInWidth):
@@ -40,7 +42,7 @@ class Board:
     def drawValidMoves(self):
         if self.validMoves != None:
             for move in self.validMoves:
-                x, y = calculatePos(move[0], move[1])
+                x, y = calculatePos(move[0][0], move[0][1])
                 pygame.draw.circle(self.screen, 'blue', (x,y), sqSize/10)
 
     def drawSquares(self):
@@ -61,12 +63,38 @@ class Board:
 
     ##################################
     ##################################
+    
+    def checkWin(self):
+        nPossibleMovesPlayer1 = nPossibleMovesPlayer2 = 0
+        winner = None
 
-    def makeMove(self, pieceCoord, move, player):
+        for row in range(sqInWidth):
+            for col in range(sqInHeight):
+                piece = self.board[row][col]
+                if piece != 0:
+                    if piece.color == player1Color:
+                        nPossibleMovesPlayer1 += len(piece.getValidMoves(self.board))
+                    if piece.color == player2Color:
+                        nPossibleMovesPlayer2 += len(piece.getValidMoves(self.board))
+        
+        if nPossibleMovesPlayer1 == 0:
+            winner = player2Color
+        elif nPossibleMovesPlayer2 == 0:
+            winner = player1Color
+        
+        return winner
+
+    def makeMove(self, pieceCoord, move, kill, player):
         pieceRow, pieceCol = pieceCoord
+        king = self.board[pieceRow][pieceCol].king
         self.board[pieceRow][pieceCol] = 0
-
-        self.board[move[0]][move[1]] = Piece(self.screen, move[0], move[1], player)
+    
+        self.board[move[0]][move[1]] = Piece(self.screen, move[0], move[1], player, king)
+        if type(kill) == list:
+            self.board[kill[0]][kill[1]] = 0
+        
+        if (self.playerTurn == player1Color and move[0] == sqInHeight-1) or (self.playerTurn == player2Color and move[0] == 0):
+            self.board[move[0]][move[1]].makeKing()
 
         if self.playerTurn == player1Color:
             self.playerTurn = player2Color
@@ -74,6 +102,7 @@ class Board:
             self.playerTurn = player1Color
 
         self.validMoves = None
+        self.winner = self.checkWin()
 
     def getSquare(self):
         mx, my = pygame.mouse.get_pos()
@@ -87,9 +116,22 @@ class Board:
         
         if selectedSquare == 0 and self.validMoves != None:
             for validMove in self.validMoves:
-                if [row, col] == validMove:
-                    self.makeMove([self.selectedPiece.row, self.selectedPiece.col], [row, col], self.playerTurn)
+                if [row, col] == validMove[0]:
+                    kill = validMove[1]
+                    self.makeMove([self.selectedPiece.row, self.selectedPiece.col], [row, col], kill, self.playerTurn)
     
+    def winnerManager(self):
+        if self.winner == player1Color:
+            winner = 'player1'
+        else:
+            winner = 'player2'
+
+        if winner != None:
+            text = self.font.render(f"Winner: {winner}", True, (50, 50, 50))
+            textRect = text.get_rect()
+
+            self.screen.blit(text, (WIDTH//2-textRect.width//2, HEIGHT//2-textRect.height//2))
+
     def events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -106,6 +148,7 @@ class Board:
 
         self.drawBoard()
         self.drawValidMoves()
+        self.winnerManager()
 
         ###############################
 

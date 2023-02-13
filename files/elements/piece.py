@@ -3,11 +3,11 @@ from ..settings import *
 from ..util import *
 
 class Piece:
-    def __init__(self, screen, row, col, color) -> None:
+    def __init__(self, screen, row, col, color, king=False) -> None:
         self.screen = screen
         self.row, self.col = row, col
         self.color = color
-        self.king = False
+        self.king = king
         self.selected = False
 
         self.radius = sqSize*0.8//2
@@ -20,7 +20,7 @@ class Piece:
             self.direction = -1
 
         self.x, self.y = calculatePos(row, col)
-
+    
     def makeKing(self):
         self.king = True
     
@@ -34,35 +34,37 @@ class Piece:
         destRow, destCol = move
         # Check if the square is occupied by the player's own piece
         if board[destRow][destCol] != 0 and board[destRow][destCol] != self.color:
-            return False
+            return [False, False]
         # Check if the move is a valid jump over an opponent's piece
-        if self.color == 'black':
-            opponent = 'white'
+        if self.color == player1Color:
+            opponent = player2Color
         else:
-            opponent = 'black'
+            opponent = player1Color
         # Check if the move is a diagonal move that involves jumping over an opponent's piece
         rowDiff = abs(row - destRow)
         colDiff = abs(col - destCol)
-        if rowDiff == 2:
-            print("tud")
+        if rowDiff == 2 and colDiff == 2:
             jumpRow = (row + destRow) // 2
             jumpCol = (col + destCol) // 2
-            if board[jumpRow][jumpCol] == opponent:
-                return True
+            jumpPos = board[jumpRow][jumpCol]
+            if jumpPos != 0 and ((destRow - row) * self.direction > 0 or self.king):
+                if jumpPos.color == opponent and board[destRow][destCol] == 0:
+                    return [True, [jumpRow, jumpCol]]
         # Check if the move is a simple diagonal move
         if rowDiff == 1 and colDiff == 1:
-            if (destRow - row) * self.direction > 0:
-                return True
+            if (destRow - row) * self.direction > 0 or self.king:
+                return [True, False]
         # If none of the above conditions are met, the move is not valid
-        return False
+        return [False, False]
 
     def getValidMoves(self, board):
         possibleMoves = []
         for rowIndex,row in enumerate(board):
             for colIndex,col in enumerate(row):
                 move = [rowIndex, colIndex]
-                if self.isValidMove(board, move):
-                    possibleMoves.append(move)
+                validMove = self.isValidMove(board, move)
+                if validMove[0]:
+                    possibleMoves.append([move, validMove[1]])
         return possibleMoves
 
     def draw(self):
