@@ -1,6 +1,7 @@
 import pygame
-from .settings import *
-from .elements.board import Board
+from .misc.settings import *
+from .screens.Board import Board
+from .screens.Menu import Menu
 
 class Game:
     def __init__(self) -> None:
@@ -13,5 +14,9 @@ class Game:
         # pvp = Player vs Player // pvc = Player vs Computer
         self.modes = ['pvp', 'pvc']
 
+        self.menu = Menu(self.screen, self.clock, self.modes)
+
     def run(self):
-        Board(self.screen, self.clock, self.modes[1], self.winnerFont, self.subtitleFont).run()
+        while True:
+            mode = self.menu.run()
+            Board(self.screen, self.clock, mode, self.winnerFont, self.subtitleFont).run()

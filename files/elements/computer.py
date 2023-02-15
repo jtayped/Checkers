@@ -1,24 +1,14 @@
+from ..misc.util import *
 import random
-from ..settings import *
 
 class Computer:
-    def __init__(self) -> None:
-        pass
-
+    def __init__(self, playerColor) -> None:
+        self.playerColor = playerColor
+    
     def getMove(self, board):
-        options = []
-        for indexRow,row in enumerate(board):
-            for indexCol,col in enumerate(row):
-                sq = board[indexRow][indexCol]
-                if sq != 0 and sq.color == player2Color:
-                    validMoves = sq.getValidMoves(board)
-                    if len(validMoves) > 0:
-                        options.append([[indexRow, indexCol], sq.getValidMoves(board)])
+        pieces = getPiecesWidthValidMoves(board, self.playerColor)
         
-        pieceAndMove = random.choice(options)
-        print(pieceAndMove)
-        pieceCord = pieceAndMove[0]
-        moveKill = random.choice(pieceAndMove[1])
-        move = moveKill[0]
-        kill = moveKill[1]
-        return pieceCord, move, kill, player2Color
+        piece = random.choice(pieces)
+        validMoves = getValidMoves(board, piece)
+        move = random.choice(validMoves)
+        return piece, move

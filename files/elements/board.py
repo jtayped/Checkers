@@ -27,18 +27,28 @@ class Board:
         self.winner = None
 
     def initBoard(self):
+        # Loop through each row in the board
         for row in range(sqInWidth):
+            # Add a new row to the board
             self.board.append([])
+            # Loop through each column in the current row
             for col in range(sqInHeight):
+                # Check if the current position should contain a piece
                 if col % 2 == ((row + 1) % 2):
+                    # If the current row is less than 3, add a piece for player 1
                     if row < 3:
                         self.board[row].append(Piece(self.screen, row, col, player1Color))
+                    # If the current row is greater than 4, add a piece for player 2
                     elif row > 4:
                         self.board[row].append(Piece(self.screen, row, col, player2Color))
+                    # If the current row is between 3 and 4, add 0 to the board
                     else:
                         self.board[row].append(0)
+                # If the current position should not contain a piece, add 0 to the board
                 else:
                     self.board[row].append(0)
+        print(self.board)
+
 
     ##################################
     ########### DRAW BOARD ###########
@@ -50,11 +60,6 @@ class Board:
                 x, y = calculatePos(move[0][0], move[0][1])
                 pygame.draw.circle(self.screen, 'blue', (x,y), sqSize/10)
 
-    def drawSquares(self):
-        for row in range(sqInWidth):
-            for col in range(row % 2, sqInWidth, 2):
-                pygame.draw.rect(self.screen, BOARD_COLOR, (row*sqSize, col*sqSize, sqSize, sqSize))
-
     def drawPieces(self):
         for row in range(sqInWidth):
             for col in range(sqInHeight):
@@ -63,7 +68,7 @@ class Board:
                     piece.update()
 
     def drawBoard(self):
-        self.drawSquares()
+        drawSquares(self.screen)
         self.drawPieces()
 
     ##################################
@@ -140,7 +145,7 @@ class Board:
             winner = self.font.render(f"Winner: {winner}", True, (50, 50, 50))
             winnerRect = winner.get_rect()
 
-            continueText = self.subtitleFont.render(f"Press C to continue", True, (50, 50, 50))
+            continueText = self.subtitleFont.render(f"Press M to continue", True, (50, 50, 50))
             continueRect = continueText.get_rect()
 
             x, y = WIDTH//2-winnerRect.width//2, HEIGHT//2-winnerRect.height//2
@@ -148,7 +153,7 @@ class Board:
             self.screen.blit(continueText, (WIDTH//2-continueRect.width//2, y+continueRect.height*1.5))
 
             key = pygame.key.get_pressed()
-            if key[pygame.K_c]:
+            if key[pygame.K_m]:
                 self.gameOver = True
 
     def events(self):
@@ -175,5 +180,6 @@ class Board:
         self.clock.tick(FPS)
     
     def run(self):
+        self.__init__(self.screen, self.clock, self.mode, self.font, self.subtitleFont)
         while not self.gameOver:
             self.update()
