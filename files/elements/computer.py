@@ -69,7 +69,6 @@ class Computer:
                 newBoard = deepcopy(board)
                 newBoard = makeMove(newBoard, player2Color, piece, move)
                 score = self.minimax(newBoard, 4, False, float("-inf"), float("inf"))
-                print(score)
                 if score > bestScore:
                     bestScore = score
                     bestPiece, bestMove = piece, move

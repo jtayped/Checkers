@@ -20,3 +20,4 @@ class Game:
         while True:
             mode = self.menu.run()
             Board(self.screen, self.clock, mode, self.winnerFont, self.subtitleFont).run()
+        pygame.quit()
