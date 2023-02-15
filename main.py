@@ -1,4 +1,4 @@
-from files.Game import Game
+from files.game import Game
 
 
 def main():

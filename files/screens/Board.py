@@ -77,51 +77,21 @@ class Board:
         drawSquares(self.screen)
         self.drawPieces()
 
-    def invertTurn(self, turn):
-        if turn == player1Color:
-            return player2Color
-        else:
-            return player1Color 
-
-    def makeMove(self, board, piece, move):
-        pieceRow, pieceCol = piece
-        moveRow, moveCol = move
-        
-        board[pieceRow][pieceCol].move(moveRow, moveCol)
-
-        board[moveRow][moveCol] = board[pieceRow][pieceCol]
-        board[pieceRow][pieceCol] = 0
-
-        if checkMoveMakesKing(moveRow, self.turn):
-            board[moveRow][moveCol].makeKing()
-
-        rowDiff, colDiff = abs(pieceRow - moveRow), abs(pieceCol - moveCol)
-
-        if rowDiff == 2 and colDiff == 2:
-
-            jumpRow, jumpCol = (pieceRow + moveRow) // 2, (pieceCol + moveCol) // 2
-            jumpPos = board[jumpRow][jumpCol]
-            if jumpPos.color == self.invertTurn(self.turn):
-                board[jumpRow][jumpCol] = 0
-
-        self.selectedPiece = None
-
-        self.turn = self.invertTurn(self.turn)
-        
-        self.winner = checkWin(self.board)
-
-        if self.mode == 'pvc' and self.turn == player2Color and self.winner == None:
-            computerMove = self.computer.getMove(board)
-            self.makeMove(self.board, computerMove[0], computerMove[1])
-
-        return board
-
     def moveManger(self):
         if pygame.mouse.get_pressed()[0] and self.selectedPiece != None:
             mx, my = pygame.mouse.get_pos()
             row, col = calculateCoord(mx, my)
             if isValidMove(self.board, (self.selectedPiece), (row, col)):
-                self.board = self.makeMove(self.board, self.selectedPiece, (row, col))
+                self.board = makeMove(self.board, self.turn, self.selectedPiece, (row, col))
+                self.winner = checkWin(self.board)
+
+                self.turn = invertTurn(self.turn)
+                self.selectedPiece = None
+
+                if self.mode == 'pvc' and self.turn == player2Color and self.winner == None:
+                    computerMove = self.computer.getMove(self.board)
+                    makeMove(self.board, self.turn, computerMove[0], computerMove[1])
+                    self.turn = invertTurn(self.turn)
 
     def winnerMessage(self):
         winner = None

@@ -12,6 +12,12 @@ def drawSquares(screen):
         for col in range(row % 2, sqInWidth, 2):
             pygame.draw.rect(screen, BOARD_COLOR, (row*sqSize, col*sqSize, sqSize, sqSize))
 
+def invertTurn(turn):
+    if turn == player1Color:
+        return player2Color
+    else:
+        return player1Color 
+
 def getPiecesWidthValidMoves(board, pieceColor):
     pieces = []
     for rowIndex,row in enumerate(board):
@@ -20,9 +26,8 @@ def getPiecesWidthValidMoves(board, pieceColor):
             if square != 0:
                 if square.color == pieceColor and len(getValidMoves(board, (rowIndex, colIndex))) > 0:
                     pieces.append([rowIndex, colIndex])
-    
-    return pieces
 
+    return pieces
 
 def isValidMove(board, pieceCoord, moveCoord):
     # Get the current row and column of the piece
@@ -87,3 +92,27 @@ def checkMoveMakesKing(row, playerColor):
         if row == 0:
             return True
     return False
+
+def makeMove(board, turn, piece, move):
+    pieceRow, pieceCol = piece
+    moveRow, moveCol = move
+    
+    board[pieceRow][pieceCol].move(moveRow, moveCol)
+
+    board[moveRow][moveCol] = board[pieceRow][pieceCol]
+    board[pieceRow][pieceCol] = 0
+
+    if checkMoveMakesKing(moveRow, turn):
+        board[moveRow][moveCol].makeKing()
+
+    rowDiff, colDiff = abs(pieceRow - moveRow), abs(pieceCol - moveCol)
+
+    if rowDiff == 2 and colDiff == 2:
+
+        jumpRow, jumpCol = (pieceRow + moveRow) // 2, (pieceCol + moveCol) // 2
+        jumpPos = board[jumpRow][jumpCol]
+        if jumpPos.color == invertTurn(turn):
+            board[jumpRow][jumpCol] = 0
+
+    return board
+
