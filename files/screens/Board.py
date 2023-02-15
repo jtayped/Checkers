@@ -33,10 +33,10 @@ class Board:
                 if col % 2 == ((row + 1) % 2):
                     # If the current row is less than 3, add a piece for player 1
                     if row < 3:
-                        board[row].append(Piece(self.screen, row, col, player1Color))
+                        board[row].append(Piece(row, col, player1Color))
                     # If the current row is greater than 4, add a piece for player 2
                     elif row > 4:
-                        board[row].append(Piece(self.screen, row, col, player2Color))
+                        board[row].append(Piece(row, col, player2Color))
                     # If the current row is between 3 and 4, add 0 to the board
                     else:
                         board[row].append(0)
@@ -71,7 +71,7 @@ class Board:
             for col in range(sqInHeight):
                 piece = self.board[row][col]
                 if piece != 0:
-                    piece.update()
+                    piece.update(self.screen)
 
     def drawBoard(self):
         drawSquares(self.screen)
@@ -89,9 +89,14 @@ class Board:
                 self.selectedPiece = None
 
                 if self.mode == 'pvc' and self.turn == player2Color and self.winner == None:
+                    self.update()
+                    pygame.display.flip()
+
                     computerMove = self.computer.getMove(self.board)
                     makeMove(self.board, self.turn, computerMove[0], computerMove[1])
                     self.turn = invertTurn(self.turn)
+
+                    self.winner = checkWin(self.board)
 
     def winnerMessage(self):
         winner = None

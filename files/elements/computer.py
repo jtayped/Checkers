@@ -1,5 +1,5 @@
 from ..misc.util import *
-import random, pickle
+import random
 from copy import deepcopy
 
 class Computer:
@@ -24,12 +24,9 @@ class Computer:
                         elif piece.color == player2Color:
                             player2Kings += 1
 
-        return player1Pieces - player2Pieces + (player1Kings * 0.5 - player2Kings * 0.5)
+        return player2Pieces - player1Pieces + player2Kings*2
 
-    def copyBoard(self, board):
-        return [row[:] for row in board]
-
-    def minimax(self, board, depth, maximizing_player):
+    def minimax(self, board, depth, maximizing_player, alpha, beta):
         if depth == 0 or checkWin(board):
             return self.eval(board)
 
@@ -37,20 +34,31 @@ class Computer:
             bestValue = float("-inf")
             for piece in getPiecesWidthValidMoves(board, player2Color):
                 for move in getValidMoves(board, piece):
-                    newBoard = self.copyBoard(board)
+                    newBoard = deepcopy(board)
                     newBoard = makeMove(newBoard, player2Color, piece, move)
-                    value = self.minimax(newBoard, depth - 1, False)
+                    value = self.minimax(newBoard, depth - 1, False, alpha, beta)
                     bestValue = max(bestValue, value)
+                    alpha = max(alpha, bestValue)
+                    if beta <= alpha:
+                        break
+                if beta <= alpha:
+                    break
             return bestValue
         else:
             bestValue = float("inf")
             for piece in getPiecesWidthValidMoves(board, player1Color):
                 for move in getValidMoves(board, piece):
-                    newBoard = self.copyBoard(board)
-                    newBoard = makeMove(board, player2Color, piece, move)
-                    value = self.minimax(newBoard, depth - 1, True)
+                    newBoard = deepcopy(board)
+                    newBoard = makeMove(newBoard, player2Color, piece, move)
+                    value = self.minimax(newBoard, depth - 1, True, alpha, beta)
                     bestValue = min(bestValue, value)
+                    beta = min(beta, bestValue)
+                    if beta <= alpha:
+                        break
+                if beta <= alpha:
+                    break
             return bestValue
+
 
     def getMove(self, board):
         bestPiece, bestMove = None, None
@@ -58,9 +66,10 @@ class Computer:
 
         for piece in getPiecesWidthValidMoves(board, player2Color):
             for move in getValidMoves(board, piece):
-                newBoard = self.copyBoard(board)
+                newBoard = deepcopy(board)
                 newBoard = makeMove(newBoard, player2Color, piece, move)
-                score = self.minimax(newBoard, 5, False)
+                score = self.minimax(newBoard, 4, False, float("-inf"), float("inf"))
+                print(score)
                 if score > bestScore:
                     bestScore = score
                     bestPiece, bestMove = piece, move
