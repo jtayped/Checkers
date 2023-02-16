@@ -1,32 +1,79 @@
 from ..misc.util import *
-import random
+import random, pygame, sys, time, threading
 from copy import deepcopy
+from multiprocessing import Manager
 
 class Computer:
     def __init__(self, playerColor) -> None:
         self.playerColor = playerColor
+        self.depth = 2
     
+    def events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+    
+    def getPiecesInCenter(self, board, pieceColor):
+        nPieces = 0
+        for rowIndex,row in enumerate(board):
+            for colIndex,col in enumerate(row):
+                square = board[rowIndex][colIndex]
+
+                if square != 0 and square.color == pieceColor:
+                    if rowIndex > sqInHeight//3 and rowIndex < int(sqInHeight*0.66):
+                        if colIndex > sqInWidth//3 and colIndex < int(sqInWidth*0.66):
+                            nPieces += 1
+        
+        return nPieces
+    
+    def isInCenter(self, pieceCord):
+        row, col = pieceCord
+        if row > sqInHeight//3 and row < int(sqInHeight*0.66):
+            if col > sqInWidth//3 and col < int(sqInWidth*0.66):
+                return True
+        return False
+
     def eval(self, board):
         player1Pieces = player2Pieces = player1Kings = player2Kings = 0
+        player1SquareControl = player2SquareControl = 0
+        player1PiecesInCenter = player2PiecesInCenter = 0
 
         for rowIndex,row in enumerate(board):
             for colIndex,col in enumerate(row):
                 piece = board[rowIndex][colIndex]
+                pieceCord = (rowIndex, colIndex)
                 if piece != 0:
                     if piece.color == player1Color:
                         player1Pieces += 1
+
+                        player1SquareControl += len(getValidMoves(board, pieceCord))
+
+                        if piece.king:
+                            player1Kings += 1
+
+                        if self.isInCenter(pieceCord):
+                            player1PiecesInCenter += 1
+
                     elif piece.color == player2Color:
                         player2Pieces += 1
 
-                    if piece.king:
-                        if piece.color == player1Color:
-                            player1Kings += 1
-                        elif piece.color == player2Color:
+                        player2SquareControl += len(getValidMoves(board, pieceCord))
+
+                        if piece.king:
                             player2Kings += 1
 
-        return player2Pieces - player1Pieces + player2Kings*2
+                        if self.isInCenter(pieceCord):
+                            player2PiecesInCenter += 1
+
+        piecesScore = player2Pieces-player1Pieces
+        kingsScore = player2Kings-player1Kings
+        controlScore = player2SquareControl - player1SquareControl
+        piecesInCenterScore = player2PiecesInCenter - player1PiecesInCenter
+
+        return piecesScore + 2*kingsScore + controlScore + 2*piecesInCenterScore
 
     def minimax(self, board, depth, maximizing_player, alpha, beta):
+        self.events()
         if depth == 0 or checkWin(board):
             return self.eval(board)
 
@@ -59,18 +106,36 @@ class Computer:
                     break
             return bestValue
 
+    def evaluateMove(self, board, piece, move, bestDict):
+        newBoard = deepcopy(board)
+        newBoard = makeMove(newBoard, player2Color, piece, move)
+        score = self.minimax(newBoard, self.depth, False, float("-inf"), float("inf"))
+        with bestDict.get_lock():
+            if score > bestDict['bestScore']:
+                bestDict['bestScore'] = score
+                bestDict['bestPiece'] = piece
+                bestDict['bestMove'] = move
 
     def getMove(self, board):
-        bestPiece, bestMove = None, None
-        bestScore = float("-inf")
+        manager = Manager()
+        bestDict = manager.dict()
+        bestDict['bestScore'] = float("-inf")
+        bestDict['bestPiece'] = None
+        bestDict['bestMove'] = None
 
+        startTime = time.time()
+
+        threads = []
         for piece in getPiecesWidthValidMoves(board, player2Color):
             for move in getValidMoves(board, piece):
-                newBoard = deepcopy(board)
-                newBoard = makeMove(newBoard, player2Color, piece, move)
-                score = self.minimax(newBoard, 4, False, float("-inf"), float("inf"))
-                if score > bestScore:
-                    bestScore = score
-                    bestPiece, bestMove = piece, move
+                thread = threading.Thread(target=self.evaluateMove, args=(board, piece, move, bestDict))
+                threads.append(thread)
+                thread.start()
 
-        return bestPiece, bestMove
+        for thread in threads:
+            thread.join()
+
+        print("Time taken:", str(round(time.time() - startTime)) + "s")
+        return bestDict['bestPiece'], bestDict['bestMove']
+
+
