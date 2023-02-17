@@ -1,12 +1,14 @@
 from ..misc.util import *
-import random, pygame, sys, time, threading
+import random, pygame, sys, time
 from copy import deepcopy
 from multiprocessing import Manager
+from tqdm import tqdm
 
 class Computer:
     def __init__(self, playerColor) -> None:
         self.playerColor = playerColor
-        self.depth = 2
+        self.depth = 7
+        self.boardsAnalized = 0
     
     def events(self):
         for event in pygame.event.get():
@@ -81,6 +83,7 @@ class Computer:
             bestValue = float("-inf")
             for piece in getPiecesWidthValidMoves(board, player2Color):
                 for move in getValidMoves(board, piece):
+                    self.boardsAnalized += 1
                     newBoard = deepcopy(board)
                     newBoard = makeMove(newBoard, player2Color, piece, move)
                     value = self.minimax(newBoard, depth - 1, False, alpha, beta)
@@ -95,6 +98,7 @@ class Computer:
             bestValue = float("inf")
             for piece in getPiecesWidthValidMoves(board, player1Color):
                 for move in getValidMoves(board, piece):
+                    self.boardsAnalized += 1
                     newBoard = deepcopy(board)
                     newBoard = makeMove(newBoard, player2Color, piece, move)
                     value = self.minimax(newBoard, depth - 1, True, alpha, beta)
@@ -106,36 +110,22 @@ class Computer:
                     break
             return bestValue
 
-    def evaluateMove(self, board, piece, move, bestDict):
-        newBoard = deepcopy(board)
-        newBoard = makeMove(newBoard, player2Color, piece, move)
-        score = self.minimax(newBoard, self.depth, False, float("-inf"), float("inf"))
-        with bestDict.get_lock():
-            if score > bestDict['bestScore']:
-                bestDict['bestScore'] = score
-                bestDict['bestPiece'] = piece
-                bestDict['bestMove'] = move
-
     def getMove(self, board):
-        manager = Manager()
-        bestDict = manager.dict()
-        bestDict['bestScore'] = float("-inf")
-        bestDict['bestPiece'] = None
-        bestDict['bestMove'] = None
-
-        startTime = time.time()
-
-        threads = []
-        for piece in getPiecesWidthValidMoves(board, player2Color):
+        bestPiece, bestMove = None, None
+        bestScore = float("-inf")
+        
+        for piece in tqdm(getPiecesWidthValidMoves(board, player2Color)):
             for move in getValidMoves(board, piece):
-                thread = threading.Thread(target=self.evaluateMove, args=(board, piece, move, bestDict))
-                threads.append(thread)
-                thread.start()
+                newBoard = deepcopy(board)
+                newBoard = makeMove(newBoard, player2Color, piece, move)
+                score = self.minimax(newBoard, self.depth, False, float("-inf"), float("inf"))
+                if score > bestScore:
+                    bestScore = score
+                    bestPiece, bestMove = piece, move
+                    
+        print("Boards analized:", str(self.boardsAnalized), "\n")
+        self.boardsAnalized = 0
 
-        for thread in threads:
-            thread.join()
-
-        print("Time taken:", str(round(time.time() - startTime)) + "s")
-        return bestDict['bestPiece'], bestDict['bestMove']
+        return bestPiece, bestMove
 
 
