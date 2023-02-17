@@ -7,7 +7,7 @@ from tqdm import tqdm
 class Computer:
     def __init__(self, playerColor) -> None:
         self.playerColor = playerColor
-        self.depth = 7
+        self.depth = 4
         self.boardsAnalized = 0
     
     def events(self):
@@ -109,7 +109,7 @@ class Computer:
                 if beta <= alpha:
                     break
             return bestValue
-
+    
     def getMove(self, board):
         bestPiece, bestMove = None, None
         bestScore = float("-inf")
